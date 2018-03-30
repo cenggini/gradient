@@ -1,0 +1,609 @@
+
+
+<!DOCTYPE html>
+<html lang="en" >
+
+<head>
+
+  <meta charset="UTF-8">
+  <link rel="shortcut icon" type="image/x-icon" href="https://static.codepen.io/assets/favicon/favicon-8ea04875e70c4b0bb41da869e81236e54394d63638a1ef12fa558a4a835f1164.ico" />
+  <link rel="mask-icon" type="" href="https://static.codepen.io/assets/favicon/logo-pin-f2d2b6d2c61838f7e76325261b7195c27224080bc099486ddd6dccb469b8e8e6.svg" color="#111" />
+  <title>CodePen - Color + Gradient Generator</title>
+  <link href="https://fonts.googleapis.com/css?family=Libre+Franklin" rel="stylesheet">
+
+  
+  
+  
+      <style>
+      * {
+  margin: 0;
+  font-family: 'Libre Franklin', sans-serif;
+  font-size: 20px;
+}
+
+#modes {
+  position: fixed;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+hr {
+  margin: 8px;
+}
+
+.color {
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  font-size: 14px;
+  background: white;
+  align-items: center;
+  transition: background 1s;
+}
+
+.color > div {
+  display: flex;
+  flex-direction: column;
+  font-size:14px;
+  margin: auto;
+  padding: 10px;
+  border-radius: 5px;
+  background: hsl(240, 15%, 85%);
+  border: solid 1px black;
+  cursor: text;
+}
+
+.descriptor {
+  margin: auto;
+  font-size:14px;
+  -webkit-user-select:all;-moz-user-select:all;-ms-user-select:all;user-select:all
+}
+
+.tooltip {
+  position: absolute;
+  padding: 5px;
+  border: solid 1px black;
+  border-radius: 5px;
+  top: -40px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #ededed;
+  opacity: 0;
+  transition: all ease 0.2s;
+  pointer-events: none;
+}
+
+.tooltip::after {
+  content: '';
+  position: absolute;
+  background: #ededed;
+  width: 10px;
+  height: 10px;
+  left: 50%;
+  border-right: solid 1px black;
+  border-bottom: solid 1px black;
+  transform: translateX(-50%) rotate(45deg);
+  top: 29px;
+}
+
+.fab {
+  position: fixed;
+  cursor: pointer;
+  width: 50px;
+  height: 50px;
+  background: white;
+  border: solid 1px;
+  border-radius: 50%;
+  box-shadow: 0 4px 10px;
+  transition: all 0.5s;
+}
+
+.fab:focus {
+  outline: none;
+}
+
+.new {
+  bottom: 20px;
+  right: 20px;
+}
+
+#gradient-mode .top .new {
+  top: 20px;
+  right: 20px;
+}
+
+.back {
+  bottom: 20px;
+  left: 20px;
+}
+
+#gradient-mode .top .back {
+  top: 20px;
+  left: 20px;
+}
+
+.forward {
+  bottom: 20px;
+  left: 80px;
+}
+
+#gradient-mode .top .forward {
+  top: 20px;
+  left: 80px;
+}
+
+.fab.disabled {
+  pointer-events: none;
+  background: rgba(150,150,150,0.8) !important;
+  box-shadow: none;
+  opacity: 0.3;
+  transform: scale(0.95);
+}
+
+.fab-btn-text {
+  color: white;
+  text-shadow:
+    -1px -1px 0 #000,  
+    1px -1px 0 #000,
+    -1px 1px 0 #000,
+    1px 1px 0 #000;
+}
+
+/* Actions */
+.fab:hover > .tooltip {
+  opacity: 1;
+  top: -50px;
+}
+    </style>
+
+  
+  
+  
+  
+
+</head>
+
+<body translate="no" >
+
+  <select id="modes">
+  <option selected value="single">Single Color</option>
+  <option value="gradient">Gradient</option>
+</select>
+
+<div class="mode-view" id="single-mode">
+  <div class="bottom color">
+    <div>
+      <div class="descriptor text hex"></div>
+      <hr>
+      <div class="descriptor text rgb"></div>
+      <hr>
+      <div class="descriptor text hsl"></div>
+    </div>
+  </div>
+  <button class="fab new">
+    <span class="fab-btn-text">+</span>
+    <span class="tooltip">New</span>
+  </button>
+  <button class="fab disabled back">
+    <span class="fab-btn-text">&lt;</span>
+    <span class="tooltip">Previous</span>
+  </button>
+  <button class="fab disabled forward">
+    <span class="fab-btn-text">&gt;</span>
+    <span class="tooltip">Next</span>
+  </button>
+</div>
+
+<div class="mode-view" id="gradient-mode">
+  <div class="color">
+    <div>
+      <div class="descriptor text lin-grad"></div>
+    </div>
+  </div>
+  <div class="bottom">
+    <button class="fab new">
+      <span class="fab-btn-text">+</span>
+      <span class="tooltip">New</span>
+    </button>
+<!--     <button class="fab disabled back">
+      <span class="fab-btn-text">&lt;</span>
+      <span class="tooltip">Previous</span>
+    </button>
+    <button class="fab disabled forward">
+      <span class="fab-btn-text">&gt;</span>
+      <span class="tooltip">Next</span>
+    </button> -->
+  </div>
+</div>
+  
+  
+  
+
+    <script >
+      // JS is dirty. Will clean it up soon enough
+var select = document.querySelector('#modes');
+var CURRENT_MODE = select.value;
+
+// decorated query selector
+var qsD = function qsD(q) {
+  return document.querySelector('#' + CURRENT_MODE + '-mode ' + q);
+};
+// undecorated
+var qs = function qs(q) {
+  return document.querySelector(q);
+};
+
+var modesObj = {
+  single: qs('#single-mode'),
+  gradient: qs('#gradient-mode')
+};
+
+var hideViews = function hideViews() {
+  return Object.keys(modesObj).map(function (e) {
+    return modesObj[e].style.display = 'none';
+  });
+};
+hideViews();
+
+// History works now! Thanks everyone <3
+
+/* Max number of colors in history */
+var HISTORY_MAX = 10;
+
+var colors = [];
+var currentIndex = 0;
+
+/* Get length of colors arr */
+var getColorsLength = function getColorsLength() {
+  return colors.length;
+};
+
+/* Get a color at an index */
+var getColorAtIndex = function getColorAtIndex(i) {
+  return i < colors.length && i >= 0 && colors[i];
+};
+
+/* Return the current index */
+var getIndex = function getIndex() {
+  return currentIndex;
+};
+
+/* Set the current index */
+var setIndex = function setIndex(n) {
+  if (n < getColorsLength()) currentIndex = n;
+};
+
+/* Increment index by 1 */
+var incrementIndex = function incrementIndex() {
+  if (currentIndex < HISTORY_MAX - 1) currentIndex += 1;
+};
+
+/* Decrememnt index by 1 */
+var decrementIndex = function decrementIndex() {
+  if (currentIndex !== 0) currentIndex -= 1;
+};
+
+/* Enable a FAB */
+var enableFAB = function enableFAB(s) {
+  return qsD(s).classList.remove('disabled');
+};
+
+/* Disable a FAB */
+var disableFAB = function disableFAB(s) {
+  return qsD(s).classList.add('disabled');
+};
+
+/* tools */
+// round a decimal between 0 - 1 to a whole number
+var decToPercentage = function decToPercentage(n) {
+  return Math.round(n * 100);
+};
+
+// Generate a number
+var generateNumber = function generateNumber() {
+  var max = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 15;
+  return Math.round(Math.random() * max);
+};
+
+// convert number into alpha character
+var numToLetter = function numToLetter(n) {
+  return String.fromCharCode(65 + (n - 10));
+};
+
+// convert a given number into a hex value
+var numToHexVal = function numToHexVal(n) {
+  return n < 10 ? n : numToLetter(n);
+};
+
+// return the opposite hex value for a given number
+var negativeVal = function negativeVal(n) {
+  return Math.abs(15 - n);
+};
+
+// generate an array of 2 numbers
+var getXX = function getXX() {
+  return [generateNumber(), generateNumber()];
+};
+
+// generate an array of 2 numbers that are 15 - numbers generated from getXX()
+var getNX = function getNX(arr) {
+  return [negativeVal(arr[0]), negativeVal(arr[1])];
+};
+
+// return color in hex format
+// quick hacky reduce for now
+var getHexString = function getHexString(arr) {
+  return arr.reduce(function (hex, currVal, i) {
+    return i !== 0 ? '' + hex + numToHexVal(currVal) : hex;
+  }, '#' + numToHexVal(arr[0]));
+};
+
+// return an RGB object given an array of numbers ranging from 0 - 15
+var getRGBObj = function getRGBObj(arr) {
+  var R = arr[1] + arr[0] * Math.pow(16, 1);
+  var G = arr[3] + arr[2] * Math.pow(16, 1);
+  var B = arr[5] + arr[4] * Math.pow(16, 1);
+  return {
+    R: R,
+    G: G,
+    B: B
+  };
+};
+// return a string representation of the rgb values
+var getRGBString = function getRGBString(_ref) {
+  var R = _ref.R,
+      G = _ref.G,
+      B = _ref.B;
+  return 'rgb(' + R + ', ' + G + ', ' + B + ')';
+};
+
+// return an HSL object given an object with R, G, and B properties ranging from 0 - 255
+var getHSLObj = function getHSLObj(_ref2) {
+  var Red = _ref2.R,
+      Green = _ref2.G,
+      Blue = _ref2.B;
+
+  // calculate r, g, and b values between 0 - 1
+  var R = Red / 255;
+  var B = Blue / 255;
+  var G = Green / 255;
+  // determine that max and min between R, G, and B
+  var max = Math.max(Math.max(R, G), B);
+  var min = Math.min(Math.min(R, G), B);
+
+  /* calculate luminance */
+  var lum = (max + min) / 2;
+  var LUMINANCE = decToPercentage(lum);
+
+  /* calculate saturation */
+  // if the luminance is greater than 0.5, use the bigLumFormula
+  // otherwise, use the small formula
+  var bigLumFormula = function bigLumFormula(max, min) {
+    return (max - min) / (2.0 - max - min);
+  };
+  var smLumFormula = function smLumFormula(max, min) {
+    return (max - min) / (max + min);
+  };
+
+  var sat = lum < 0.5 ? smLumFormula(max, min) : bigLumFormula(max, min);
+  var SATURATION = decToPercentage(sat);
+
+  /* calculate hue */
+  // use one of the three functions when the corresponding color is
+  // the maximum of the three colors
+  var rMax = function rMax(g, b, max, min) {
+    return (g - b) / (max - min);
+  };
+  var gMax = function gMax(r, b, max, min) {
+    return 2.0 + (b - r) / (max - min);
+  };
+  var bMax = function bMax(r, g, max, min) {
+    return 4.0 + (r - g) / (max - min);
+  };
+
+  var hue = null;
+  if (R === max) {
+    hue = rMax(G, B, max, min);
+  } else if (G === max) {
+    hue = gMax(R, B, max, min);
+  } else if (B === max) {
+    hue = bMax(R, G, max, min);
+  }
+
+  var degs = hue * 60;
+
+  var HUE = Math.round(degs < 0 ? degs + 360 : degs);
+
+  return {
+    HUE: HUE,
+    SATURATION: SATURATION,
+    LUMINANCE: LUMINANCE
+  };
+};
+// return string representation of the hsl values
+var getHSLString = function getHSLString(_ref3) {
+  var HUE = _ref3.HUE,
+      SATURATION = _ref3.SATURATION,
+      LUMINANCE = _ref3.LUMINANCE;
+  return 'hsl(' + HUE + ', ' + SATURATION + '%, ' + LUMINANCE + '%)';
+};
+
+// push color to color history
+var addColorObjectToHistory = function addColorObjectToHistory(o) {
+  colors.length < HISTORY_MAX ? colors.push(o) : colors.shift() && colors.push(o);
+};
+
+// style the back and forward buttons with the color of the color
+// they will navigate to
+var assignBackAndForwardColors = function assignBackAndForwardColors() {
+  if (getColorsLength() > 0) {
+    qsD('.back').style.background = getColorAtIndex(getIndex() - 1).hexString;
+  }
+
+  if (getIndex() < getColorsLength() - 1) {
+    qsD('.forward').style.background = getColorAtIndex(getIndex() + 1).hexString;
+  }
+};
+
+// assign color values to their respective locations
+var updateView = function updateView(color) {
+  var _color$hexString = color.hexString,
+      hexString = _color$hexString === undefined ? '' : _color$hexString,
+      _color$rgbString = color.rgbString,
+      rgbString = _color$rgbString === undefined ? '' : _color$rgbString,
+      _color$hslString = color.hslString,
+      hslString = _color$hslString === undefined ? '' : _color$hslString,
+      _color$negHexString = color.negHexString,
+      negHexString = _color$negHexString === undefined ? '' : _color$negHexString;
+
+
+  assignBackAndForwardColors();
+
+  if (CURRENT_MODE === 'single') {
+    qsD('.new').style.background = negHexString;
+
+    qsD('.color').style.background = hexString;
+
+    qsD('.color .hex').innerHTML = hexString;
+    qsD('.color .rgb').innerHTML = rgbString;
+    qsD('.color .hsl').innerHTML = hslString;
+  }
+};
+
+// FUN STUFF! //
+
+var getColor = function getColor() {
+  // Generated values
+  var rr = getXX();
+  var gg = getXX();
+  var bb = getXX();
+
+  // Negative values
+  var nr = getNX(rr);
+  var ng = getNX(gg);
+  var nb = getNX(bb);
+
+  var genValArr = rr.concat(gg, bb);
+  var negValArr = nr.concat(ng, nb);
+
+  // Hex
+  var hexString = getHexString(genValArr);
+  var negHexString = getHexString(negValArr);
+
+  // RGB
+  var rgbObj = getRGBObj(genValArr);
+  var rgbString = getRGBString(rgbObj);
+
+  // HSL
+  var hslObj = getHSLObj(rgbObj);
+  var hslString = getHSLString(hslObj);
+
+  // object containing the hex, negative hex, rgb, and hsl data
+  var color = {
+    hexString: hexString,
+    rgbString: rgbString,
+    hslString: hslString,
+    negHexString: negHexString,
+    rgbObj: rgbObj
+  };
+
+  return color;
+};
+
+// generation function
+var churn = function churn() {
+  var colorObj = getColor();
+
+  addColorObjectToHistory(colorObj);
+
+  updateView(colorObj);
+
+  return colorObj.hexString;
+};
+
+/* Create a new color */
+var createNewColor = function createNewColor(fn) {
+  // start color index at the end of the color array
+  setIndex(getColorsLength() - 1);
+  incrementIndex();
+  disableFAB('.forward');
+  fn && fn() || churn();
+  // enable back button when history exists
+  getColorsLength() > 0 && enableFAB('.back');
+};
+
+/* Navigation */
+/* Go back a color */
+var goBack = function goBack() {
+  decrementIndex();
+  var prevColor = getColorAtIndex(getIndex());
+
+  updateView(prevColor);
+
+  getIndex() === 0 && disableFAB('.back');
+  enableFAB('.forward');
+};
+
+/* Go forward a color */
+var goForward = function goForward() {
+  incrementIndex();
+  var nextColor = getColorAtIndex(getIndex());
+
+  updateView(nextColor);
+
+  getIndex() === getColorsLength() - 1 && disableFAB('.forward');
+  enableFAB('.back');
+};
+
+/* Button functions */
+qsD('.back').onclick = function () {
+  goBack();
+};
+qsD('.forward').onclick = function () {
+  goForward();
+};
+qsD('.new').onclick = function () {
+  createNewColor();
+};
+
+// Kick off color generation
+churn();
+modesObj[CURRENT_MODE].style.display = 'block';
+
+var gradMode = function gradMode() {
+  var gColors = [getColor(), getColor()];
+  var top = gColors[0];
+  var bottom = gColors[1];
+  var linGrad = 'linear-gradient(70deg, ' + top.hexString + ', ' + bottom.hexString + ')';
+  qsD('.color').style.background = linGrad;
+  qsD('.new').style.background = bottom.negHexString;
+  qsD('.lin-grad').innerHTML = linGrad;
+};
+
+qs('#modes').onchange = function (e) {
+  hideViews();
+  modesObj[e.target.value].style.display = 'block';
+  CURRENT_MODE = e.target.value;
+  if (CURRENT_MODE === 'single') churn();else if (CURRENT_MODE === 'gradient') {
+    qsD('.bottom .new').onclick = gradMode;
+    gradMode();
+  }
+};
+
+/* Reference */
+// HSL Formulas
+// http://www.niwa.nu/2013/05/math-behind-colorspace-conversions-rgb-hsl/
+// HSL Representation
+// https://upload.wikimedia.org/wikipedia/commons/2/2d/HSL_color_solid_dblcone.png
+    </script>
+
+
+
+  
+  
+
+</body>
+
+</html>
+ 
